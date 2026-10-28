@@ -1,0 +1,303 @@
+{
+  "name": "Currency Alerts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "b2638c25-70c0-430d-bf15-b7d5c175eb54",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        -80
+      ],
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "url": "https://open.er-api.com/v6/latest/USD",
+        "options": {}
+      },
+      "id": "2f3d833c-e9e6-49e3-a193-861b8edc28cb",
+      "name": "Get Currencies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        -80
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "79575f6a-da17-4c64-80fb-09cb689e347e",
+              "name": "pair",
+              "value": "=USD/NGN",
+              "type": "string"
+            },
+            {
+              "id": "cb7b2070-1a8b-4cc0-98f9-bd58515f753e",
+              "name": "rate",
+              "value": "={{ $json.rates.NGN }}",
+              "type": "number"
+            },
+            {
+              "id": "c3633227-8c07-4f0d-a3ed-1bf4632998a1",
+              "name": "date",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "168eb3ac-00d9-477a-beb9-0069fd0d8f58",
+              "name": "target",
+              "value": 1700,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c98dfcc5-03a0-4dd0-b092-37cbb49816c5",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "7f98584d-f60b-45e7-8c86-2919bd5723e2",
+              "leftValue": "={{ $json.rate }}",
+              "rightValue": "={{ $json.target }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        672,
+        -80
+      ],
+      "id": "afd2fc11-49ef-4758-be78-b168fae6d4a2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CCQ6S6R7E",
+          "mode": "list",
+          "cachedResultName": "finance-budget"
+        },
+        "text": "=*Buy Window:* {{ $json.pair }} is {{ $json.rate }} (target ≤ {{ $json.target }}) on {{ $json.date }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        896,
+        -208
+      ],
+      "id": "52ff8ae6-051d-4db8-a39d-67c04f253895",
+      "name": "Send a message",
+      "webhookId": "7360e75a-0a0d-47e6-9822-8feab40c4f8d",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "ks6n8ytihKxx0Fij",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "19FU-KhO4zaAbwqw4EJX_YGSPDSmnpczWcMa-FoGy2IY",
+          "mode": "list",
+          "cachedResultName": "FX History",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19FU-KhO4zaAbwqw4EJX_YGSPDSmnpczWcMa-FoGy2IY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19FU-KhO4zaAbwqw4EJX_YGSPDSmnpczWcMa-FoGy2IY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Alerted": "no",
+            "Date": "={{ $json.date }}",
+            "Pair": "={{ $json.pair }}",
+            "Rate": "={{ $json.rate }}",
+            "Target": "={{ $json.target }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pair",
+              "displayName": "Pair",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rate",
+              "displayName": "Rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Target",
+              "displayName": "Target",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alerted",
+              "displayName": "Alerted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        64
+      ],
+      "id": "8f9d244d-de62-491a-8e62-ee3302831f1f",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ho9GVAuUTFb4AuGN",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Currencies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Currencies": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "61fc4993-fbee-4670-88e2-69e7838234d9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c6478c92facba12730aa4ef6ac8b87c58235e733cd662c882910e939f210b1a"
+  },
+  "nodeGroups": [],
+  "id": "eWkXIKD62G7Y0jif",
+  "tags": []
+}
